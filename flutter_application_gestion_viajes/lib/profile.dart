@@ -11,113 +11,76 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final _formKey = GlobalKey<FormState>();
-
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _imageController = TextEditingController();
-
-  bool _isLoading = true;
-  String? _userId;
+  Map<String, dynamic>? userData;
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _listenToUserChanges();
   }
 
-  Future<void> _loadProfile() async {
-    final snapshot = await _db
-        .collection('users')
+  void _listenToUserChanges() {
+    _db.collection('users')
         .where('username', isEqualTo: widget.username)
         .limit(1)
-        .get();
-
-    if (snapshot.docs.isNotEmpty) {
-      final data = snapshot.docs.first.data();
-      _userId = snapshot.docs.first.id;
-      _usernameController.text = data['username'] ?? '';
-      _passwordController.text = data['password'] ?? '';
-      _imageController.text = data['profileImage'] ?? '';
-    }
-
-    setState(() => _isLoading = false);
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.docs.isNotEmpty) {
+        setState(() {
+          userData = snapshot.docs.first.data();
+          loading = false;
+        });
+      }
+    });
   }
 
-  Future<void> _saveChanges() async {
-    if (!_formKey.currentState!.validate() || _userId == null) return;
-
-    await _db.collection('users').doc(_userId).update({
-      'username': _usernameController.text.trim(),
-      'password': _passwordController.text.trim(),
-      'profileImage': _imageController.text.trim(),
-    });
-
-    if (context.mounted) {
+  Future<void> _updateField(String field, String value) async {
+    final query = await _db.collection('users').where('username', isEqualTo: widget.username).limit(1).get();
+    if (query.docs.isNotEmpty) {
+      await _db.collection('users').doc(query.docs.first.id).update({field: value});
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Perfil actualizado correctamente'),
-          backgroundColor: Colors.green,
-        ),
+        SnackBar(content: Text('$field actualizado correctamente')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil de usuario')),
+      appBar: AppBar(title: const Text('Perfil')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 45,
-                  backgroundImage: _imageController.text.isNotEmpty
-                      ? NetworkImage(_imageController.text)
-                      : const NetworkImage('https://i.imgur.com/4ZQZ4Y0.png'),
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(labelText: 'Nombre de usuario'),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Introduce un nombre' : null,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Contraseña'),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Introduce una contraseña' : null,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _imageController,
-                decoration: const InputDecoration(
-                    labelText: 'URL de imagen de perfil',
-                    hintText: 'https://...'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _saveChanges,
-                icon: const Icon(Icons.save),
-                label: const Text('Guardar cambios'),
-                style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50)),
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundImage: userData!['profileImage'] != null && userData!['profileImage'].isNotEmpty
+                  ? NetworkImage(userData!['profileImage'])
+                  : null,
+              child: userData!['profileImage'] == null || userData!['profileImage'].isEmpty
+                  ? const Icon(Icons.person, size: 50)
+                  : null,
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              decoration: const InputDecoration(labelText: 'Enlace de imagen de perfil'),
+              onSubmitted: (value) => _updateField('profileImage', value.trim()),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              decoration: InputDecoration(labelText: 'Nombre de usuario', hintText: userData!['username']),
+              onSubmitted: (value) => _updateField('username', value.trim()),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Nueva contraseña'),
+              onSubmitted: (value) => _updateField('password', value.trim()),
+            ),
+          ],
         ),
       ),
     );
