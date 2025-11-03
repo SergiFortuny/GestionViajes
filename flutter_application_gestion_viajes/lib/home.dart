@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'profile.dart';
 import 'admin.dart';
+import 'theme_manager.dart'; // 🔥 Importamos el controlador global de tema
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -17,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? userRole;
   String? profileImage;
   bool loading = true;
+  bool showAdminMessage = true; // Para mostrar el mensaje del admin al inicio
 
   @override
   void initState() {
@@ -40,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loading = false;
       });
 
+      // 🔁 Escucha cambios en tiempo real del perfil
       _db.collection('users').doc(userId).snapshots().listen((snapshot) {
         if (snapshot.exists) {
           final newData = snapshot.data()!;
@@ -54,6 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ------------------------------------
+  //       AÑADIR / EDITAR VIAJE
+  // ------------------------------------
   Future<void> _addOrEditTrip({String? tripId, Map<String, dynamic>? existingData}) async {
     final origenController = TextEditingController(text: existingData?['origen'] ?? '');
     final destinoController = TextEditingController(text: existingData?['destino'] ?? '');
@@ -103,17 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             IconButton(
                               icon: const Icon(Icons.remove_circle_outline),
                               onPressed: () {
-                                if (personas > 1) {
-                                  setStateDialog(() => personas--);
-                                }
+                                if (personas > 1) setStateDialog(() => personas--);
                               },
                             ),
                             Text('$personas', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline),
-                              onPressed: () {
-                                setStateDialog(() => personas++);
-                              },
+                              onPressed: () => setStateDialog(() => personas++),
                             ),
                           ],
                         ),
@@ -226,6 +228,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ------------------------------------
+  //        ELIMINAR VIAJE
+  // ------------------------------------
   Future<void> _deleteTrip(String tripId) async {
     if (userId == null) return;
     final confirm = await showDialog<bool>(
@@ -249,6 +254,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ------------------------------------
+  //              UI
+  // ------------------------------------
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -256,7 +264,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestión de Viajes')),
+      appBar: AppBar(
+        title: const Text('Gestión de Viajes'),
+        actions: [
+          // 🌗 Botón global para cambiar tema
+          IconButton(
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            tooltip: 'Cambiar modo',
+            onPressed: () => ThemeManager().toggle(),
+          ),
+        ],
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -279,19 +301,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 leading: const Icon(Icons.flight),
                 title: const Text('Mis Viajes'),
                 onTap: () {
-                  Navigator.pushReplacement(
-                      context, MaterialPageRoute(builder: (_) => HomeScreen(username: widget.username)));
+                  setState(() => showAdminMessage = false);
+                  Navigator.pop(context);
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Perfil'),
-              onTap: () {
-                Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => ProfileScreen(username: widget.username)));
-              },
-            ),
-            if (userRole == 'admin')
+            if (userRole == 'admin') ...[
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: const Text('Inicio'),
+                onTap: () {
+                  setState(() => showAdminMessage = true);
+                  Navigator.pop(context);
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.admin_panel_settings),
                 title: const Text('Panel de administración'),
@@ -304,76 +326,130 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
+            ],
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Perfil'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfileScreen(username: widget.username),
+                  ),
+                );
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Cerrar sesión'),
-              onTap: () {
-                Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
-              },
+              onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false),
             ),
           ],
         ),
       ),
-      body: userRole == 'admin'
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  '👑 Este usuario tiene permisos de administrador.\n\nPuede gestionar usuarios y sus viajes desde el panel de administración.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        child: userRole == 'admin' && showAdminMessage
+            ? const Center(
+                key: ValueKey('admin-message'),
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    '👑 Este usuario tiene permisos de administrador.\n\nPuede gestionar usuarios y sus viajes desde el panel de administración.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+              )
+            : // Dentro del body, donde tienes:
+StreamBuilder<QuerySnapshot>(
+  key: const ValueKey('user-trips'),
+  stream: _db
+      .collection('users')
+      .doc(userId)
+      .collection('trips')
+      .orderBy('createdAt', descending: true)
+      .snapshots(),
+  builder: (context, snapshot) {
+    if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+    final trips = snapshot.data!.docs;
+    if (trips.isEmpty) return const Center(child: Text('No tienes viajes aún.'));
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      itemCount: trips.length,
+      itemBuilder: (context, index) {
+        final trip = trips[index];
+        final data = trip.data() as Map<String, dynamic>;
+        final fechaSalida = (data['fecha_salida'] as Timestamp).toDate();
+        final fechaVuelta = (data['fecha_vuelta'] as Timestamp).toDate();
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: Container(
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: const Icon(Icons.flight_takeoff, color: Colors.blueAccent),
+            ),
+            title: Text(
+              '${data['origen']} → ${data['destino']}',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                'Salida: ${fechaSalida.day}/${fechaSalida.month}/${fechaSalida.year}\n'
+                'Vuelta: ${fechaVuelta.day}/${fechaVuelta.month}/${fechaVuelta.year}\n'
+                'Personas: ${data['personas']} - ${data['transporte']}',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall!.color,
+                  height: 1.3,
                 ),
               ),
-            )
-          : StreamBuilder<QuerySnapshot>(
-              stream: _db
-                  .collection('users')
-                  .doc(userId)
-                  .collection('trips')
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                final trips = snapshot.data!.docs;
-                if (trips.isEmpty) return const Center(child: Text('No tienes viajes aún.'));
-                return ListView.builder(
-                  itemCount: trips.length,
-                  itemBuilder: (context, index) {
-                    final trip = trips[index];
-                    final data = trip.data() as Map<String, dynamic>;
-                    final fechaSalida = (data['fecha_salida'] as Timestamp).toDate();
-                    final fechaVuelta = (data['fecha_vuelta'] as Timestamp).toDate();
-
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      child: ListTile(
-                        leading: const Icon(Icons.flight_takeoff, color: Colors.blue),
-                        title: Text('${data['origen']} → ${data['destino']}'),
-                        subtitle: Text(
-                            'Salida: ${fechaSalida.day}/${fechaSalida.month}/${fechaSalida.year}\nVuelta: ${fechaVuelta.day}/${fechaVuelta.month}/${fechaVuelta.year}\nPersonas: ${data['personas']} - ${data['transporte']}'),
-                        isThreeLine: true,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () => _addOrEditTrip(tripId: trip.id, existingData: data),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.redAccent),
-                              onPressed: () => _deleteTrip(trip.id),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
             ),
-      floatingActionButton:
-          userRole == 'user' ? FloatingActionButton(onPressed: _addOrEditTrip, child: const Icon(Icons.add)) : null,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                  onPressed: () => _addOrEditTrip(tripId: trip.id, existingData: data),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  onPressed: () => _deleteTrip(trip.id),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  },
+),
+
+      ),
+      floatingActionButton: userRole == 'user'
+          ? FloatingActionButton(onPressed: _addOrEditTrip, child: const Icon(Icons.add))
+          : null,
     );
   }
 }
