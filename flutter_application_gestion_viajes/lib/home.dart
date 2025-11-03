@@ -40,7 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
         loading = false;
       });
 
-      // Escucha cambios en tiempo real (para actualizar foto, nombre, etc)
       _db.collection('users').doc(userId).snapshots().listen((snapshot) {
         if (snapshot.exists) {
           final newData = snapshot.data()!;
@@ -55,120 +54,144 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _addTrip() async {
-    final origenController = TextEditingController();
-    final destinoController = TextEditingController();
-    final personasController = TextEditingController();
-    final transporteController = TextEditingController();
-    final notasController = TextEditingController();
+  Future<void> _addOrEditTrip({String? tripId, Map<String, dynamic>? existingData}) async {
+    final origenController = TextEditingController(text: existingData?['origen'] ?? '');
+    final destinoController = TextEditingController(text: existingData?['destino'] ?? '');
+    final notasController = TextEditingController(text: existingData?['notas'] ?? '');
     final formKey = GlobalKey<FormState>();
 
-    DateTime? fechaSalida;
-    DateTime? fechaVuelta;
+    DateTime? fechaSalida = existingData != null ? (existingData['fecha_salida'] as Timestamp).toDate() : null;
+    DateTime? fechaVuelta = existingData != null ? (existingData['fecha_vuelta'] as Timestamp).toDate() : null;
+    int personas = existingData?['personas'] ?? 1;
+    String transporte = existingData?['transporte'] ?? 'Avión ✈️';
 
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('✈️ Nuevo viaje'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: origenController,
-                  decoration: const InputDecoration(labelText: 'Origen'),
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                  validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: destinoController,
-                  decoration: const InputDecoration(labelText: 'Destino'),
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                  validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: personasController,
-                  decoration: const InputDecoration(labelText: 'Cantidad de personas'),
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: transporteController,
-                  decoration: const InputDecoration(labelText: 'Medio de transporte'),
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                ),
-                const SizedBox(height: 15),
-                Row(
+        title: Text(tripId == null ? '✈️ Nuevo viaje' : '✏️ Editar viaje'),
+        content: StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Text(
-                        fechaSalida == null
-                            ? '📅 Fecha de salida'
-                            : 'Salida: ${fechaSalida!.day}/${fechaSalida!.month}/${fechaSalida!.year}',
-                      ),
+                    TextFormField(
+                      controller: origenController,
+                      decoration: const InputDecoration(labelText: 'Origen'),
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: () async {
-                        final fecha = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                        );
-                        if (fecha != null) {
-                          setState(() => fechaSalida = fecha);
-                        }
-                      },
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: destinoController,
+                      decoration: const InputDecoration(labelText: 'Destino'),
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Personas:', style: TextStyle(fontSize: 16)),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline),
+                              onPressed: () {
+                                if (personas > 1) {
+                                  setStateDialog(() => personas--);
+                                }
+                              },
+                            ),
+                            Text('$personas', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline),
+                              onPressed: () {
+                                setStateDialog(() => personas++);
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: transporte,
+                      decoration: const InputDecoration(labelText: 'Medio de transporte'),
+                      items: const [
+                        DropdownMenuItem(value: 'Avión ✈️', child: Text('Avión ✈️')),
+                        DropdownMenuItem(value: 'Tren 🚄', child: Text('Tren 🚄')),
+                        DropdownMenuItem(value: 'Coche 🚗', child: Text('Coche 🚗')),
+                        DropdownMenuItem(value: 'Barco 🚢', child: Text('Barco 🚢')),
+                        DropdownMenuItem(value: 'Autobús 🚌', child: Text('Autobús 🚌')),
+                      ],
+                      onChanged: (value) => setStateDialog(() => transporte = value!),
+                    ),
+                    const SizedBox(height: 15),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            fechaSalida == null
+                                ? '📅 Fecha de salida'
+                                : 'Salida: ${fechaSalida!.day}/${fechaSalida!.month}/${fechaSalida!.year}',
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          onPressed: () async {
+                            final fecha = await showDatePicker(
+                              context: context,
+                              initialDate: fechaSalida ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2100),
+                            );
+                            if (fecha != null) setStateDialog(() => fechaSalida = fecha);
+                          },
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            fechaVuelta == null
+                                ? '📆 Fecha de regreso'
+                                : 'Regreso: ${fechaVuelta!.day}/${fechaVuelta!.month}/${fechaVuelta!.year}',
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today_outlined),
+                          onPressed: () async {
+                            final fecha = await showDatePicker(
+                              context: context,
+                              initialDate: fechaVuelta ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2100),
+                            );
+                            if (fecha != null) setStateDialog(() => fechaVuelta = fecha);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: notasController,
+                      decoration: const InputDecoration(labelText: 'Bloc de notas'),
+                      maxLines: 3,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                     ),
                   ],
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        fechaVuelta == null
-                            ? '📆 Fecha de regreso'
-                            : 'Regreso: ${fechaVuelta!.day}/${fechaVuelta!.month}/${fechaVuelta!.year}',
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.calendar_today_outlined),
-                      onPressed: () async {
-                        final fecha = await showDatePicker(
-                          context: context,
-                          initialDate: fechaSalida ?? DateTime.now(),
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                        );
-                        if (fecha != null) {
-                          setState(() => fechaVuelta = fecha);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: notasController,
-                  decoration: const InputDecoration(labelText: 'Bloc de notas'),
-                  maxLines: 3,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
@@ -177,19 +200,26 @@ class _HomeScreenState extends State<HomeScreen> {
               if (!formKey.currentState!.validate()) return;
               if (userId == null) return;
 
-              await _db.collection('users').doc(userId).collection('trips').add({
+              final tripData = {
                 'origen': origenController.text.trim(),
                 'destino': destinoController.text.trim(),
-                'personas': int.tryParse(personasController.text.trim()) ?? 1,
-                'transporte': transporteController.text.trim(),
+                'personas': personas,
+                'transporte': transporte,
                 'fecha_salida': fechaSalida ?? DateTime.now(),
                 'fecha_vuelta': fechaVuelta ?? DateTime.now(),
                 'notas': notasController.text.trim(),
-                'createdAt': DateTime.now(),
-              });
+                'createdAt': existingData?['createdAt'] ?? DateTime.now(),
+              };
+
+              if (tripId == null) {
+                await _db.collection('users').doc(userId).collection('trips').add(tripData);
+              } else {
+                await _db.collection('users').doc(userId).collection('trips').doc(tripId).update(tripData);
+              }
+
               if (context.mounted) Navigator.pop(context);
             },
-            child: const Text('Guardar viaje'),
+            child: const Text('Guardar'),
           ),
         ],
       ),
@@ -323,9 +353,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         subtitle: Text(
                             'Salida: ${fechaSalida.day}/${fechaSalida.month}/${fechaSalida.year}\nVuelta: ${fechaVuelta.day}/${fechaVuelta.month}/${fechaVuelta.year}\nPersonas: ${data['personas']} - ${data['transporte']}'),
                         isThreeLine: true,
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.redAccent),
-                          onPressed: () => _deleteTrip(trip.id),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _addOrEditTrip(tripId: trip.id, existingData: data),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.redAccent),
+                              onPressed: () => _deleteTrip(trip.id),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -334,7 +373,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
       floatingActionButton:
-          userRole == 'user' ? FloatingActionButton(onPressed: _addTrip, child: const Icon(Icons.add)) : null,
+          userRole == 'user' ? FloatingActionButton(onPressed: _addOrEditTrip, child: const Icon(Icons.add)) : null,
     );
   }
 }
