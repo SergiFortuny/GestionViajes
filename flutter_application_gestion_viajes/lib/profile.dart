@@ -11,75 +11,130 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  Map<String, dynamic>? userData;
+
+  final usernameController = TextEditingController();
+  final passwordController = TextEditingController();
+  final imageController = TextEditingController();
+
   bool loading = true;
+  bool _obscurePassword = true; // 👁️ controla si se ve o no la contraseña
+  String? userId;
+  Map<String, dynamic>? userData;
 
   @override
   void initState() {
     super.initState();
-    _listenToUserChanges();
+    _loadUserData();
   }
 
-  void _listenToUserChanges() {
-    _db.collection('users')
+  Future<void> _loadUserData() async {
+    final query = await _db
+        .collection('users')
         .where('username', isEqualTo: widget.username)
         .limit(1)
-        .snapshots()
-        .listen((snapshot) {
-      if (snapshot.docs.isNotEmpty) {
-        setState(() {
-          userData = snapshot.docs.first.data();
-          loading = false;
-        });
-      }
-    });
+        .get();
+
+    if (query.docs.isNotEmpty) {
+      final doc = query.docs.first;
+      userId = doc.id;
+      userData = doc.data();
+      usernameController.text = userData!['username'];
+      passwordController.text = userData!['password'];
+      imageController.text = userData!['profileImage'] ?? '';
+    }
+    setState(() => loading = false);
   }
 
-  Future<void> _updateField(String field, String value) async {
-    final query = await _db.collection('users').where('username', isEqualTo: widget.username).limit(1).get();
-    if (query.docs.isNotEmpty) {
-      await _db.collection('users').doc(query.docs.first.id).update({field: value});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$field actualizado correctamente')),
-      );
-    }
+  Future<void> _saveChanges() async {
+    if (userId == null) return;
+
+    await _db.collection('users').doc(userId).update({
+      'username': usernameController.text.trim(),
+      'password': passwordController.text.trim(),
+      'profileImage': imageController.text.trim(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Cambios guardados correctamente 🎉'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      appBar: AppBar(title: const Text('Perfil de usuario')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: userData!['profileImage'] != null && userData!['profileImage'].isNotEmpty
-                  ? NetworkImage(userData!['profileImage'])
-                  : null,
-              child: userData!['profileImage'] == null || userData!['profileImage'].isEmpty
-                  ? const Icon(Icons.person, size: 50)
-                  : null,
+            Center(
+              child: CircleAvatar(
+                radius: 60,
+                backgroundImage: (imageController.text.isNotEmpty)
+                    ? NetworkImage(imageController.text)
+                    : null,
+                child: (imageController.text.isEmpty)
+                    ? const Icon(Icons.person, size: 60)
+                    : null,
+              ),
             ),
             const SizedBox(height: 20),
             TextField(
-              decoration: const InputDecoration(labelText: 'Enlace de imagen de perfil'),
-              onSubmitted: (value) => _updateField('profileImage', value.trim()),
+              controller: imageController,
+              decoration: const InputDecoration(
+                labelText: 'URL de imagen de perfil',
+                hintText: 'Pega aquí un enlace directo a tu foto',
+              ),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextField(
-              decoration: InputDecoration(labelText: 'Nombre de usuario', hintText: userData!['username']),
-              onSubmitted: (value) => _updateField('username', value.trim()),
+              controller: usernameController,
+              decoration: const InputDecoration(labelText: 'Nombre de usuario'),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextField(
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Nueva contraseña'),
-              onSubmitted: (value) => _updateField('password', value.trim()),
+              controller: passwordController,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: 'Contraseña',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey[600],
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
+              textInputAction: TextInputAction.done,
             ),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              onPressed: _saveChanges,
+              icon: const Icon(Icons.save),
+              label: const Text('Guardar cambios'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+                textStyle: const TextStyle(fontSize: 18),
+              ),
+            ),
+            const SizedBox(height: 30),
           ],
         ),
       ),
