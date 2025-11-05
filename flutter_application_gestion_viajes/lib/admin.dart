@@ -1,3 +1,20 @@
+/// 📘 Descripción del archivo:
+/// Pantalla de administración (AdminDashboard) de la aplicación "Gestión de Viajes".
+///
+/// 🔹 Funcionalidades principales:
+/// - Permite al administrador:
+///   → Ver todos los usuarios registrados (excepto a sí mismo).  
+///   → Editar o eliminar usuarios.  
+///   → Visualizar, editar y eliminar los viajes de cada usuario.  
+/// - Sincronización en tiempo real con Firebase Firestore.
+/// - Muestra confirmaciones y notificaciones visuales.
+///
+/// 🔹 Aspectos visuales:
+/// - Estilo JetBlack con soporte para tema claro/oscuro unificado.
+/// - Bordes, sombras suaves y tipografía uniforme Material Design 3.
+/// - Diseño limpio, moderno y responsive.
+
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -12,6 +29,7 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // 🔹 Eliminar usuario
   void _deleteUser(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -22,7 +40,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text('Eliminar'),
           ),
         ],
@@ -31,11 +49,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     if (confirm == true) {
       await _db.collection('users').doc(id).delete();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Usuario eliminado correctamente.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuario eliminado correctamente.')),
+      );
     }
   }
 
+  // 🔹 Editar usuario
   void _editUser(BuildContext context, String id, String username, String password, String rol) {
     final usernameController = TextEditingController(text: username);
     final passwordController = TextEditingController(text: password);
@@ -52,15 +72,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
           children: [
             TextField(
               controller: usernameController,
-              decoration: const InputDecoration(labelText: 'Username'),
+              decoration: const InputDecoration(labelText: 'Nombre de usuario'),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                suffixIcon: const Icon(Icons.visibility),
-              ),
+              decoration: const InputDecoration(labelText: 'Contraseña'),
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
@@ -86,16 +103,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 'rol': selectedRole,
               });
               Navigator.pop(context);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('Usuario actualizado')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Usuario actualizado correctamente.')),
+              );
             },
-            child: const Text('Guardar cambios'),
+            child: const Text('Guardar'),
           ),
         ],
       ),
     );
   }
 
+  // 🔹 Mostrar viajes de un usuario
   void _showUserTrips(BuildContext context, String userId, String username) async {
     showDialog(
       context: context,
@@ -162,8 +181,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             ],
                           ),
                           child: ListTile(
-                            title: Text('${data['origen']} → ${data['destino']}',
-                                style: const TextStyle(fontWeight: FontWeight.bold)),
+                            title: Text(
+                              '${data['origen']} → ${data['destino']}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             subtitle: Text(
                               'Salida: ${fechaSalida.day}/${fechaSalida.month}/${fechaSalida.year}\n'
                               'Vuelta: ${fechaVuelta.day}/${fechaVuelta.month}/${fechaVuelta.year}',
@@ -195,11 +216,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  // 🔹 Editar viaje
   void _editTrip(BuildContext context, String userId, String tripId, Map<String, dynamic> data) async {
     final origenController = TextEditingController(text: data['origen']);
     final destinoController = TextEditingController(text: data['destino']);
     final notasController = TextEditingController(text: data['notas']);
-    int personas = data['personas'];
     String transporte = data['transporte'];
 
     showDialog(
@@ -237,8 +258,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 'notas': notasController.text,
               });
               Navigator.pop(context);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('Viaje actualizado')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Viaje actualizado correctamente.')),
+              );
             },
             child: const Text('Guardar'),
           ),
@@ -247,6 +269,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  // 🔹 Eliminar viaje
   void _deleteTrip(String userId, String tripId) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -257,7 +280,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text('Eliminar'),
           ),
         ],
@@ -266,8 +289,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     if (confirm == true) {
       await _db.collection('users').doc(userId).collection('trips').doc(tripId).delete();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Viaje eliminado')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Viaje eliminado correctamente.')),
+      );
     }
   }
 
@@ -283,7 +307,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
           final users = snapshot.data!.docs.where((u) => u['username'] != widget.currentUsername).toList();
-
           if (users.isEmpty) {
             return const Center(child: Text('No hay usuarios registrados.'));
           }
@@ -299,16 +322,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 duration: const Duration(milliseconds: 350),
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[850] : Colors.grey.shade50,
+                  color: isDark ? Colors.grey[900] : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: isDark
-                          ? Colors.black.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.25),
+                          ? Colors.black.withOpacity(0.4)
+                          : Colors.grey.withOpacity(0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -325,8 +348,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         : null,
                   ),
                   title: Text(data['username'], style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text('Rol: ${data['rol']}',
-                      style: TextStyle(color: Theme.of(context).textTheme.bodySmall!.color)),
+                  subtitle: Text(
+                    'Rol: ${data['rol']}',
+                    style: TextStyle(color: Theme.of(context).textTheme.bodySmall!.color),
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

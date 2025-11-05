@@ -1,3 +1,18 @@
+/// 📘 Descripción del archivo:
+/// Pantalla de registro (RegisterScreen) para la aplicación "Gestión de Viajes".
+///
+/// 🔹 Funcionalidades principales:
+/// - Permite registrar nuevos usuarios en Firebase Firestore.
+/// - Comprueba si el usuario ya existe antes de crear uno nuevo.
+/// - Asigna por defecto el rol `user` y una imagen de perfil predeterminada.
+/// - Muestra un diálogo de confirmación tras el registro exitoso.
+///
+/// 🔹 Aspectos visuales:
+/// - Diseño JetBlack (modo oscuro moderno, consistente con toda la app).
+/// - Colores unificados (fondo negro, azul principal Material Design 3).
+/// - Botón para mostrar/ocultar la contraseña.
+/// - Transiciones y campos con bordes suaves.
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login.dart';
@@ -42,8 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       'username': usernameController.text.trim(),
       'password': passwordController.text.trim(),
       'rol': 'user',
-      'profileImage':
-          'https://cdn-icons-png.flaticon.com/512/149/149071.png', // Imagen por defecto
+      'profileImage': 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
     });
 
     setState(() => loading = false);
@@ -52,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          backgroundColor: Colors.black,
+          backgroundColor: const Color(0xFF0D0D0D),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text(
             '✅ Registro exitoso',
@@ -81,66 +95,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.black, // 🔥 Fondo negro fijo
+      backgroundColor: isDark ? const Color(0xFF0D0D0D) : Colors.white,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.person_add, color: Colors.white, size: 80),
+              const Icon(Icons.person_add, color: Colors.blueAccent, size: 80),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 "Crear Cuenta",
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               const SizedBox(height: 40),
+
+              // 🔹 Campo de usuario
               TextField(
                 controller: usernameController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: 'Usuario',
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                  labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                  prefixIcon: Icon(Icons.person, color: isDark ? Colors.white70 : Colors.black45),
                   filled: true,
-                  fillColor: Colors.white10,
+                  fillColor: isDark ? Colors.white10 : Colors.grey.shade100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
+
+              // 🔹 Campo de contraseña
               TextField(
                 controller: passwordController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 obscureText: !showPassword,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _register(),
                 decoration: InputDecoration(
                   labelText: 'Contraseña',
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                  labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                  prefixIcon: Icon(Icons.lock, color: isDark ? Colors.white70 : Colors.black45),
                   suffixIcon: IconButton(
                     icon: Icon(
                       showPassword ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.white70,
+                      color: isDark ? Colors.white70 : Colors.black45,
                     ),
                     onPressed: () => setState(() => showPassword = !showPassword),
                   ),
                   filled: true,
-                  fillColor: Colors.white10,
+                  fillColor: isDark ? Colors.white10 : Colors.grey.shade100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),
               ),
               const SizedBox(height: 30),
+
+              // 🔹 Botón de registro
               ElevatedButton(
                 onPressed: loading ? null : _register,
                 style: ElevatedButton.styleFrom(
@@ -157,6 +179,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     : const Text('Registrarse', style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
               const SizedBox(height: 20),
+
+              // 🔹 Enlace para ir al login
               TextButton(
                 onPressed: () {
                   Navigator.pushReplacement(
@@ -164,9 +188,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                   );
                 },
-                child: const Text(
+                child: Text(
                   "¿Ya tienes cuenta? Inicia sesión",
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
                 ),
               ),
             ],

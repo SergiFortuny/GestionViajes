@@ -1,8 +1,23 @@
+/// 📘 Descripción del archivo:
+/// Pantalla principal (HomeScreen) de la aplicación "Gestión de Viajes".
+///
+/// 🔹 Funcionalidades principales:
+/// - Los usuarios pueden:
+///   → Ver, añadir, editar y eliminar sus viajes.  
+///   → Gestionar detalles (origen, destino, fechas, transporte, notas).
+/// - Los administradores pueden:
+///   → Acceder al panel de administración desde el menú lateral.
+/// - Drawer con acceso al perfil, panel admin y cierre de sesión.
+/// - Sincronización en tiempo real con Firebase.
+///
+/// 🔹 Estilo visual:
+/// - Tema JetBlack constante (oscuro por defecto, sin alternar).  
+/// - Bordes definidos, sombras suaves y transiciones fluidas.
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'profile.dart';
 import 'admin.dart';
-import 'theme_manager.dart'; // 🔥 Importamos el controlador global de tema
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -18,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String? userRole;
   String? profileImage;
   bool loading = true;
-  bool showAdminMessage = true; // Para mostrar el mensaje del admin al inicio
 
   @override
   void initState() {
@@ -42,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loading = false;
       });
 
-      // 🔁 Escucha cambios en tiempo real del perfil
+      // 🔁 Escucha en tiempo real de cambios del usuario
       _db.collection('users').doc(userId).snapshots().listen((snapshot) {
         if (snapshot.exists) {
           final newData = snapshot.data()!;
@@ -57,25 +71,27 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ------------------------------------
-  //       AÑADIR / EDITAR VIAJE
-  // ------------------------------------
+  /// ✏️ Añadir o editar viaje
   Future<void> _addOrEditTrip({String? tripId, Map<String, dynamic>? existingData}) async {
     final origenController = TextEditingController(text: existingData?['origen'] ?? '');
     final destinoController = TextEditingController(text: existingData?['destino'] ?? '');
     final notasController = TextEditingController(text: existingData?['notas'] ?? '');
     final formKey = GlobalKey<FormState>();
 
-    DateTime? fechaSalida = existingData != null ? (existingData['fecha_salida'] as Timestamp).toDate() : null;
-    DateTime? fechaVuelta = existingData != null ? (existingData['fecha_vuelta'] as Timestamp).toDate() : null;
+    DateTime? fechaSalida =
+        existingData != null ? (existingData['fecha_salida'] as Timestamp).toDate() : null;
+    DateTime? fechaVuelta =
+        existingData != null ? (existingData['fecha_vuelta'] as Timestamp).toDate() : null;
     int personas = existingData?['personas'] ?? 1;
     String transporte = existingData?['transporte'] ?? 'Avión ✈️';
 
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: Colors.grey[900],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(tripId == null ? '✈️ Nuevo viaje' : '✏️ Editar viaje'),
+        title: Text(tripId == null ? '✈️ Nuevo viaje' : '✏️ Editar viaje',
+            style: const TextStyle(color: Colors.white)),
         content: StatefulBuilder(
           builder: (context, setStateDialog) {
             return SingleChildScrollView(
@@ -86,35 +102,35 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     TextFormField(
                       controller: origenController,
-                      decoration: const InputDecoration(labelText: 'Origen'),
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputStyle('Origen'),
                       validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: destinoController,
-                      decoration: const InputDecoration(labelText: 'Destino'),
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputStyle('Destino'),
                       validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
                     ),
                     const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Personas:', style: TextStyle(fontSize: 16)),
+                        const Text('Personas:', style: TextStyle(color: Colors.white)),
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.remove_circle_outline),
+                              icon: const Icon(Icons.remove_circle_outline, color: Colors.white70),
                               onPressed: () {
                                 if (personas > 1) setStateDialog(() => personas--);
                               },
                             ),
-                            Text('$personas', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text('$personas',
+                                style: const TextStyle(
+                                    fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                             IconButton(
-                              icon: const Icon(Icons.add_circle_outline),
+                              icon: const Icon(Icons.add_circle_outline, color: Colors.white70),
                               onPressed: () => setStateDialog(() => personas++),
                             ),
                           ],
@@ -124,7 +140,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       value: transporte,
-                      decoration: const InputDecoration(labelText: 'Medio de transporte'),
+                      dropdownColor: Colors.grey[850],
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputStyle('Medio de transporte'),
                       items: const [
                         DropdownMenuItem(value: 'Avión ✈️', child: Text('Avión ✈️')),
                         DropdownMenuItem(value: 'Tren 🚄', child: Text('Tren 🚄')),
@@ -139,13 +157,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            fechaSalida == null
-                                ? '📅 Fecha de salida'
-                                : 'Salida: ${fechaSalida!.day}/${fechaSalida!.month}/${fechaSalida!.year}',
+                            fechaSalida != null
+                                ? '📅 Salida: ${fechaSalida?.day}/${fechaSalida?.month}/${fechaSalida?.year}'
+                                : '📅 Fecha de salida',
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.calendar_today),
+                          icon: const Icon(Icons.calendar_today, color: Colors.white),
                           onPressed: () async {
                             final fecha = await showDatePicker(
                               context: context,
@@ -162,13 +181,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            fechaVuelta == null
-                                ? '📆 Fecha de regreso'
-                                : 'Regreso: ${fechaVuelta!.day}/${fechaVuelta!.month}/${fechaVuelta!.year}',
+                            fechaVuelta != null
+                                ? '📆 Regreso: ${fechaVuelta?.day}/${fechaVuelta?.month}/${fechaVuelta?.year}'
+                                : '📆 Fecha de regreso',
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.calendar_today_outlined),
+                          icon: const Icon(Icons.calendar_today_outlined, color: Colors.white),
                           onPressed: () async {
                             final fecha = await showDatePicker(
                               context: context,
@@ -184,10 +204,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: notasController,
-                      decoration: const InputDecoration(labelText: 'Bloc de notas'),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputStyle('Bloc de notas'),
                       maxLines: 3,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                     ),
                   ],
                 ),
@@ -196,8 +215,11 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white70))),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
               if (userId == null) return;
@@ -221,28 +243,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
               if (context.mounted) Navigator.pop(context);
             },
-            child: const Text('Guardar'),
+            child: const Text('Guardar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  // ------------------------------------
-  //        ELIMINAR VIAJE
-  // ------------------------------------
+  InputDecoration _inputStyle(String label) => InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white12,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      );
+
   Future<void> _deleteTrip(String tripId) async {
     if (userId == null) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Eliminar viaje'),
-        content: const Text('¿Seguro que quieres eliminar este viaje?'),
+        backgroundColor: Colors.grey[900],
+        title: const Text('Eliminar viaje', style: TextStyle(color: Colors.white)),
+        content: const Text('¿Seguro que quieres eliminar este viaje?',
+            style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Eliminar'),
           ),
         ],
@@ -254,9 +283,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ------------------------------------
-  //              UI
-  // ------------------------------------
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -264,27 +290,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.grey[900],
+        foregroundColor: Colors.white,
         title: const Text('Gestión de Viajes'),
-        actions: [
-          // 🌗 Botón global para cambiar tema
-          IconButton(
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
-            ),
-            tooltip: 'Cambiar modo',
-            onPressed: () => ThemeManager().toggle(),
-          ),
-        ],
       ),
       drawer: Drawer(
+        backgroundColor: Colors.grey[900],
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(color: Colors.blue),
+              decoration: const BoxDecoration(color: Colors.black),
               accountName: Text(widget.username, style: const TextStyle(fontSize: 18)),
               accountEmail: Text(userRole == 'admin' ? 'Administrador' : 'Usuario'),
               currentAccountPicture: CircleAvatar(
@@ -298,157 +316,124 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             if (userRole == 'user')
               ListTile(
-                leading: const Icon(Icons.flight),
-                title: const Text('Mis Viajes'),
-                onTap: () {
-                  setState(() => showAdminMessage = false);
-                  Navigator.pop(context);
-                },
+                leading: const Icon(Icons.flight, color: Colors.white),
+                title: const Text('Mis Viajes', style: TextStyle(color: Colors.white)),
+                onTap: () => Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (_) => HomeScreen(username: widget.username))),
               ),
-            if (userRole == 'admin') ...[
-              ListTile(
-                leading: const Icon(Icons.home),
-                title: const Text('Inicio'),
-                onTap: () {
-                  setState(() => showAdminMessage = true);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.admin_panel_settings),
-                title: const Text('Panel de administración'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AdminDashboard(currentUsername: widget.username),
-                    ),
-                  );
-                },
-              ),
-            ],
             ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Perfil'),
-              onTap: () {
-                Navigator.push(
+              leading: const Icon(Icons.person, color: Colors.white),
+              title: const Text('Perfil', style: TextStyle(color: Colors.white)),
+              onTap: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => ProfileScreen(username: widget.username))),
+            ),
+            if (userRole == 'admin')
+              ListTile(
+                leading: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                title: const Text('Panel de administración', style: TextStyle(color: Colors.white)),
+                onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ProfileScreen(username: widget.username),
+                    builder: (_) => AdminDashboard(currentUsername: widget.username),
                   ),
-                );
-              },
-            ),
-            const Divider(),
+                ),
+              ),
+            const Divider(color: Colors.white24),
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Cerrar sesión'),
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
               onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false),
             ),
           ],
         ),
       ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 400),
-        child: userRole == 'admin' && showAdminMessage
-            ? const Center(
-                key: ValueKey('admin-message'),
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    '👑 Este usuario tiene permisos de administrador.\n\nPuede gestionar usuarios y sus viajes desde el panel de administración.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-              )
-            : // Dentro del body, donde tienes:
-StreamBuilder<QuerySnapshot>(
-  key: const ValueKey('user-trips'),
-  stream: _db
-      .collection('users')
-      .doc(userId)
-      .collection('trips')
-      .orderBy('createdAt', descending: true)
-      .snapshots(),
-  builder: (context, snapshot) {
-    if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-    final trips = snapshot.data!.docs;
-    if (trips.isEmpty) return const Center(child: Text('No tienes viajes aún.'));
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      itemCount: trips.length,
-      itemBuilder: (context, index) {
-        final trip = trips[index];
-        final data = trip.data() as Map<String, dynamic>;
-        final fechaSalida = (data['fecha_salida'] as Timestamp).toDate();
-        final fechaVuelta = (data['fecha_vuelta'] as Timestamp).toDate();
-
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOut,
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.blue.withOpacity(0.25),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: Container(
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(10),
-              child: const Icon(Icons.flight_takeoff, color: Colors.blueAccent),
-            ),
-            title: Text(
-              '${data['origen']} → ${data['destino']}',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                'Salida: ${fechaSalida.day}/${fechaSalida.month}/${fechaSalida.year}\n'
-                'Vuelta: ${fechaVuelta.day}/${fechaVuelta.month}/${fechaVuelta.year}\n'
-                'Personas: ${data['personas']} - ${data['transporte']}',
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodySmall!.color,
-                  height: 1.3,
+      body: userRole == 'admin'
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  '👑 Este usuario tiene permisos de administrador.\n\nPuede gestionar usuarios y sus viajes desde el panel de administración.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                  onPressed: () => _addOrEditTrip(tripId: trip.id, existingData: data),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                  onPressed: () => _deleteTrip(trip.id),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  },
-),
+            )
+          : StreamBuilder<QuerySnapshot>(
+              stream: _db
+                  .collection('users')
+                  .doc(userId)
+                  .collection('trips')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                final trips = snapshot.data!.docs;
+                if (trips.isEmpty) {
+                  return const Center(
+                      child: Text('No tienes viajes aún.', style: TextStyle(color: Colors.white70)));
+                }
 
-      ),
+                return ListView.builder(
+                  padding: const EdgeInsets.all(8),
+                  itemCount: trips.length,
+                  itemBuilder: (context, index) {
+                    final trip = trips[index];
+                    final data = trip.data() as Map<String, dynamic>;
+                    final fechaSalida = (data['fecha_salida'] as Timestamp).toDate();
+                    final fechaVuelta = (data['fecha_vuelta'] as Timestamp).toDate();
+
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade800),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        leading:
+                            const Icon(Icons.flight_takeoff, color: Colors.blueAccent, size: 28),
+                        title: Text('${data['origen']} → ${data['destino']}',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        subtitle: Text(
+                          'Salida: ${fechaSalida.day}/${fechaSalida.month}/${fechaSalida.year}\n'
+                          'Vuelta: ${fechaVuelta.day}/${fechaVuelta.month}/${fechaVuelta.year}\n'
+                          'Personas: ${data['personas']} - ${data['transporte']}',
+                          style: const TextStyle(color: Colors.white70, height: 1.3),
+                        ),
+                        isThreeLine: true,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                              onPressed: () => _addOrEditTrip(tripId: trip.id, existingData: data),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.redAccent),
+                              onPressed: () => _deleteTrip(trip.id),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
       floatingActionButton: userRole == 'user'
-          ? FloatingActionButton(onPressed: _addOrEditTrip, child: const Icon(Icons.add))
+          ? FloatingActionButton(
+              backgroundColor: Colors.blueAccent,
+              onPressed: _addOrEditTrip,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
           : null,
     );
   }

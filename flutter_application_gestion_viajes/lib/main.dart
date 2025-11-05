@@ -1,8 +1,21 @@
+/// 📘 Descripción del archivo:
+/// Archivo principal `main.dart` de la aplicación "Gestión de Viajes".
+///
+/// 🔹 Funcionalidades principales:
+/// - Inicializa la aplicación Flutter y configura el tema global.
+/// - Define el estilo visual JetBlack (modo oscuro permanente).
+/// - Establece el punto de entrada (`LoginScreen`) y las rutas base.
+///
+/// 🔹 Aspectos visuales:
+/// - Paleta JetBlack unificada para toda la app.
+/// - Uso de Material 3 con esquinas redondeadas y fondos oscuros.
+/// - Colores coherentes en AppBar, Drawer, Inputs y botones.
+
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'login.dart';
 import 'register.dart';
-import 'theme_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,110 +33,52 @@ void main() async {
   runApp(const ViajesApp());
 }
 
-class ViajesApp extends StatefulWidget {
+class ViajesApp extends StatelessWidget {
   const ViajesApp({super.key});
 
   @override
-  State<ViajesApp> createState() => _ViajesAppState();
-}
-
-class _ViajesAppState extends State<ViajesApp> {
-  final ThemeManager _themeManager = ThemeManager();
-
-  @override
-  void initState() {
-    super.initState();
-    _themeManager.addListener(_onThemeChange);
-  }
-
-  @override
-  void dispose() {
-    _themeManager.removeListener(_onThemeChange);
-    super.dispose();
-  }
-
-  void _onThemeChange() => setState(() {});
-
-  @override
   Widget build(BuildContext context) {
-    // 🎨 Paleta unificada
-    const primaryBlue = Color(0xFF2196F3);
-    const backgroundDark = Color(0xFF121212);
-    const surfaceDark = Color(0xFF1E1E1E);
-    const textLight = Color(0xFFE0E0E0);
-    const textMuted = Color(0xFFB0B0B0);
-
-    final lightTheme = ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
-        primary: primaryBlue,
-        secondary: Color(0xFF64B5F6),
-        background: Colors.white,
-        surface: Color(0xFFF5F5F5),
-      ),
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 1,
-      ),
-      textTheme: const TextTheme(
-        bodyMedium: TextStyle(color: Colors.black87),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        color: const Color(0xFFF8F8F8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 3,
-      ),
-    );
-
-    final darkTheme = ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
-        primary: primaryBlue,
-        secondary: Color(0xFF64B5F6),
-        background: backgroundDark,
-        surface: surfaceDark,
-      ),
-      scaffoldBackgroundColor: backgroundDark,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: surfaceDark,
-        foregroundColor: textLight,
-        elevation: 1,
-      ),
-      textTheme: const TextTheme(
-        bodyMedium: TextStyle(color: textLight),
-        bodySmall: TextStyle(color: textMuted),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        color: surfaceDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 3,
-      ),
-    );
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Gestión de Viajes',
-      themeMode: _themeManager.mode,
-      theme: lightTheme,
-      darkTheme: darkTheme,
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark, // 🌙 JetBlack activo por defecto
+        scaffoldBackgroundColor: Colors.black,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          elevation: 1,
+        ),
+        drawerTheme: const DrawerThemeData(
+          backgroundColor: Colors.black,
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.grey[900],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 4,
+        ),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.white),
+          bodySmall: TextStyle(color: Colors.white70),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white10,
+          labelStyle: const TextStyle(color: Colors.white70),
+          hintStyle: const TextStyle(color: Colors.white38),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          ),
+        ),
+      ),
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
