@@ -1,12 +1,23 @@
-/// 📘 Descripción del archivo:
-/// Pantalla de inicio de sesión (LoginScreen) - Diseño PREMIUM
-///
-/// 🔹 Interfaz completamente renovada:
-/// - Gradientes y sombras elegantes
-/// - Animaciones sutiles
-/// - Diseño de tarjeta glassmorphism
-/// - Iconografía moderna
-/// - Efectos visuales premium
+/// 📘 PANTALLA DE INICIO DE SESIÓN
+/// 
+/// 🔹 FUNCIONALIDADES PRINCIPALES:
+/// - Autenticación de usuarios con Firebase Firestore
+/// - Validación de campos email y contraseña
+/// - Navegación automática con teclado (Enter)
+/// - Redirección a Home tras login exitoso
+/// - Enlace a pantalla de registro
+/// 
+/// 🔹 FLUJO DE USUARIO:
+/// 1. Usuario ingresa email y contraseña
+/// 2. Validación automática de formato email
+/// 3. Presiona Enter para navegar entre campos
+/// 4. Botón de login con estado de carga
+/// 5. Redirección a Home o mensaje de error
+/// 
+/// 🔹 VALIDACIONES:
+/// • Email: formato válido y no vacío
+/// • Contraseña: no vacía
+/// • Credenciales: existencia en Firebase
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

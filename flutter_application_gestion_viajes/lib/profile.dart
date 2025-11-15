@@ -1,10 +1,36 @@
-/// 📘 Pantalla de perfil - Diseño PREMIUM
-///
-/// 🔹 Interfaz completamente renovada:
-/// - Gradientes y efectos visuales premium
-/// - Diseño glassmorphism consistente
-/// - Animaciones y transiciones suaves
-/// - Iconografía moderna y elegante
+/// 📘 PANTALLA DE PERFIL - GESTIÓN PERSONALIZADA POR ROL
+/// 
+/// 🔹 FUNCIONALIDADES PRINCIPALES:
+/// - Edición de datos personales del usuario
+/// - Gestión diferenciada por rol (admin/user)
+/// - Integración con mapas para ubicación
+/// - Actualización en tiempo real en Firebase
+/// - Subida y visualización de imagen de perfil
+/// 
+/// 🔹 CAMPOS PARA USUARIOS NORMALES:
+/// • Imagen de perfil (URL)
+/// • Email (validado)
+/// • Teléfono
+/// • Nombre de usuario
+/// • Ubicación (con mapa interactivo)
+/// • Contraseña
+/// 
+/// 🔹 CAMPOS PARA ADMINISTRADORES:
+/// • Email (validado)
+/// • Nombre de usuario  
+/// • Contraseña
+/// 
+/// 🔹 FUNCIONALIDADES DE MAPA:
+/// • Solo disponible para usuarios normales
+/// • Pantalla completa para selección
+/// • Geocoding inverso automático
+/// • Búsqueda por dirección con validación
+/// 
+/// 🔹 VALIDACIONES INTELIGENTES:
+/// • Email: formato válido para todos
+/// • Teléfono: obligatorio solo para usuarios
+/// • Ubicación: obligatoria solo para usuarios
+/// • Usuario/Contraseña: obligatorios para todos
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -38,6 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _saving = false;
   String? userId;
   Map<String, dynamic>? userData;
+  bool _esAdmin = false;
 
   // 🔹 Mapa controller para controlar el mapa
   final MapController _mapController = MapController();
@@ -61,12 +88,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       userId = doc.id;
       userData = doc.data();
       
+      _esAdmin = userData!['rol'] == 'admin';
+      
       usernameController.text = userData!['username'];
       passwordController.text = userData!['password'];
       emailController.text = userData!['email'] ?? '';
-      phoneController.text = userData!['phone'] ?? '';
-      imageController.text = userData!['profileImage'] ?? '';
-      locationController.text = userData!['locationAddress'] ?? '';
+      
+      // Solo cargar estos campos si NO es admin
+      if (!_esAdmin) {
+        phoneController.text = userData!['phone'] ?? '';
+        imageController.text = userData!['profileImage'] ?? '';
+        locationController.text = userData!['locationAddress'] ?? '';
+      }
     }
     setState(() => loading = false);
   }
@@ -131,17 +164,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
-  // 🔹 Validación de teléfono
+  // 🔹 Validación de teléfono (solo para usuarios normales)
   String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) {
+    if (!_esAdmin && (value == null || value.isEmpty)) {
       return 'Por favor ingresa tu teléfono';
     }
     return null;
   }
 
-  // 🔹 Validación de ubicación
+  // 🔹 Validación de ubicación (solo para usuarios normales)
   String? _validateLocation(String? value) {
-    if (value == null || value.isEmpty) {
+    if (!_esAdmin && (value == null || value.isEmpty)) {
       return 'Por favor selecciona tu ubicación';
     }
     return null;
@@ -163,8 +196,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
-  // 🔹 Mapa a PANTALLA COMPLETA con diseño premium
+  // 🔹 Mapa a PANTALLA COMPLETA con diseño premium (solo para usuarios normales)
   void _showFullScreenMap() {
+    if (_esAdmin) return; // Los admins no usan mapa
+
     LatLng initialLocation = const LatLng(40.4168, -3.7038);
     
     if (locationController.text.isNotEmpty) {
@@ -207,7 +242,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   maxZoom: 18.0,
                   onTap: (tapPosition, latLng) async {
                     final address = await _getAddressFromLatLng(latLng);
-                    locationController.text = address;
+                    setState(() {
+                      locationController.text = address;
+                    });
                     Navigator.pop(context);
                     
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -325,9 +362,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Buscar ubicación por dirección
+  // 🔹 Buscar ubicación por dirección (solo para usuarios normales)
   void _searchLocation() async {
-    if (locationController.text.isEmpty) return;
+    if (_esAdmin || locationController.text.isEmpty) return;
 
     setState(() => _loadingLocation = true);
 
@@ -390,15 +427,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     setState(() => _saving = true);
 
+    // 🔹 Datos básicos para todos los usuarios
     final updateData = {
       'username': usernameController.text.trim(),
       'password': passwordController.text.trim(),
       'email': emailController.text.trim(),
-      'phone': phoneController.text.trim(),
-      'profileImage': imageController.text.trim(),
-      'locationAddress': locationController.text.trim(),
       'updatedAt': DateTime.now(),
     };
+
+    // 🔹 Solo añadir campos adicionales si NO es admin
+    if (!_esAdmin) {
+      updateData.addAll({
+        'phone': phoneController.text.trim(),
+        'profileImage': imageController.text.trim(),
+        'locationAddress': locationController.text.trim(),
+      });
+    }
 
     try {
       await _db.collection('users').doc(userId).update(updateData);
@@ -470,7 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0D1B2A),
       appBar: AppBar(
-        title: const Text('Mi Perfil'),
+        title: Text(_esAdmin ? 'Perfil de Administrador' : 'Mi Perfil'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
@@ -564,15 +608,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               child: CircleAvatar(
                                 radius: 50,
-                                backgroundImage: (imageController.text.isNotEmpty)
+                                backgroundImage: (!_esAdmin && imageController.text.isNotEmpty)
                                     ? NetworkImage(imageController.text)
                                     : null,
                                 backgroundColor: Colors.white.withOpacity(0.1),
-                                child: (imageController.text.isEmpty)
-                                    ? const Icon(Icons.person, size: 50, color: Colors.white70)
+                                child: (_esAdmin || imageController.text.isEmpty)
+                                    ? Icon(
+                                        _esAdmin ? Icons.admin_panel_settings : Icons.person, 
+                                        size: 50, 
+                                        color: Colors.white70
+                                      )
                                     : null,
                               ),
                             ),
+                            if (!_esAdmin) // Solo mostrar edit si no es admin
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: const BoxDecoration(
@@ -594,31 +643,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          'Edita tu información personal',
+                          _esAdmin 
+                            ? 'Panel de administración - Configuración básica'
+                            : 'Edita tu información personal',
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
                           ),
                         ),
+                        if (_esAdmin) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_user, size: 14, color: Colors.white),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Administrador',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 30),
 
-                  // 🔹 Formulario de perfil
+                  // 🔹 Formulario de perfil - DIFERENCIADO POR ROL
                   Column(
                     children: [
-                      _buildProfileField(
-                        controller: imageController,
-                        label: 'URL de Imagen de Perfil',
-                        icon: Icons.photo_camera,
-                        iconColor: Colors.purpleAccent,
-                        hintText: 'https://ejemplo.com/imagen.jpg',
-                      ),
+                      // 🔹 Solo para USUARIOS NORMALES: Imagen de perfil
+                      if (!_esAdmin) ...[
+                        _buildProfileField(
+                          controller: imageController,
+                          label: 'URL de Imagen de Perfil',
+                          icon: Icons.photo_camera,
+                          iconColor: Colors.purpleAccent,
+                          hintText: 'https://ejemplo.com/imagen.jpg',
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
-                      const SizedBox(height: 20),
-
+                      // 🔹 Para TODOS: Email
                       _buildProfileField(
                         controller: emailController,
                         label: 'Email',
@@ -630,17 +709,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 20),
 
-                      _buildProfileField(
-                        controller: phoneController,
-                        label: 'Teléfono',
-                        icon: Icons.phone,
-                        iconColor: Colors.greenAccent,
-                        keyboardType: TextInputType.phone,
-                        validator: _validatePhone,
-                      ),
+                      // 🔹 Solo para USUARIOS NORMALES: Teléfono
+                      if (!_esAdmin) 
+                        _buildProfileField(
+                          controller: phoneController,
+                          label: 'Teléfono',
+                          icon: Icons.phone,
+                          iconColor: Colors.greenAccent,
+                          keyboardType: TextInputType.phone,
+                          validator: _validatePhone,
+                        ),
 
-                      const SizedBox(height: 20),
+                      if (!_esAdmin) const SizedBox(height: 20),
 
+                      // 🔹 Para TODOS: Nombre de Usuario
                       _buildProfileField(
                         controller: usernameController,
                         label: 'Nombre de Usuario',
@@ -651,7 +733,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 20),
 
-                      // 🔹 Campo de contraseña
+                      // 🔹 Solo para USUARIOS NORMALES: Ubicación y Mapa
+                      if (!_esAdmin) ...[
+                        // Campo de ubicación
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: TextFormField(
+                            controller: locationController,
+                            style: const TextStyle(color: Colors.white),
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: 'Ubicación',
+                              labelStyle: const TextStyle(color: Colors.white70),
+                              prefixIcon: Container(
+                                margin: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.orangeAccent.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(Icons.location_on, color: Colors.orangeAccent[100]),
+                              ),
+                              suffixIcon: _loadingLocation
+                                  ? Container(
+                                      margin: const EdgeInsets.all(8),
+                                      child: const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    )
+                                  : Container(
+                                      margin: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: IconButton(
+                                        icon: const Icon(Icons.search, size: 20),
+                                        onPressed: _searchLocation,
+                                      ),
+                                    ),
+                              filled: true,
+                              fillColor: Colors.white.withOpacity(0.1),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide.none,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: const BorderSide(color: Colors.orangeAccent),
+                              ),
+                            ),
+                            validator: _validateLocation,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // 🔹 Botón del mapa (solo para usuarios normales)
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blueAccent.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: _showFullScreenMap,
+                            icon: const Icon(Icons.map, size: 20),
+                            label: const Text('Seleccionar Ubicación en el Mapa'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+                      ],
+
+                      // 🔹 Para TODOS: Contraseña
                       Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(15),
@@ -712,101 +892,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
-
-                      // 🔹 Campo de ubicación
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: TextFormField(
-                          controller: locationController,
-                          style: const TextStyle(color: Colors.white),
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            labelText: 'Ubicación',
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon: Container(
-                              margin: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.orangeAccent.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(Icons.location_on, color: Colors.orangeAccent[100]),
-                            ),
-                            suffixIcon: _loadingLocation
-                                ? Container(
-                                    margin: const EdgeInsets.all(8),
-                                    child: const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    ),
-                                  )
-                                : Container(
-                                    margin: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(Icons.search, size: 20),
-                                      onPressed: _searchLocation,
-                                    ),
-                                  ),
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              borderSide: BorderSide.none,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              borderSide: const BorderSide(color: Colors.orangeAccent),
-                            ),
-                          ),
-                          validator: _validateLocation,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // 🔹 Botón del mapa
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blueAccent.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton.icon(
-                          onPressed: _showFullScreenMap,
-                          icon: const Icon(Icons.map, size: 20),
-                          label: const Text('Seleccionar Ubicación en el Mapa'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          ),
-                        ),
-                      ),
-
                       const SizedBox(height: 30),
 
                       // 🔹 Botón de guardar cambios
@@ -845,14 +930,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 AnimatedOpacity(
                                   duration: const Duration(milliseconds: 300),
                                   opacity: _saving ? 0 : 1,
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.save, color: Colors.white, size: 20),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Text(
-                                        'Guardar Cambios',
-                                        style: TextStyle(
+                                        _esAdmin ? 'Guardar Configuración' : 'Guardar Cambios',
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,

@@ -1,11 +1,24 @@
-/// 📘 Descripción del archivo:
-/// Pantalla de registro (RegisterScreen) - Diseño PREMIUM
-///
-/// 🔹 Interfaz completamente renovada:
-/// - Gradientes y efectos visuales premium
-/// - Diseño glassmorphism consistente
-/// - Animaciones y transiciones suaves
-/// - Iconografía moderna y elegante
+/// 📘 PANTALLA DE REGISTRO
+/// 
+/// 🔹 FUNCIONALIDADES PRINCIPALES:
+/// - Registro completo de nuevos usuarios
+/// - Integración con mapas para selección de ubicación
+/// - Validación de todos los campos del formulario
+/// - Verificación de unicidad de email y usuario
+/// - Geocoding inverso (coordenadas → dirección)
+/// 
+/// 🔹 CAMPOS DEL FORMULARIO:
+/// • Email (único, validado)
+/// • Teléfono (opcional)
+/// • Ubicación (con mapa interactivo)
+/// • Nombre de usuario (único)
+/// • Contraseña (con visibilidad toggle)
+/// 
+/// 🔹 FUNCIONALIDADES DE MAPA:
+/// • Selección táctil en mapa completo
+/// • Geocoding inverso automático
+/// • Búsqueda por dirección
+/// • Confirmación visual de ubicación
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

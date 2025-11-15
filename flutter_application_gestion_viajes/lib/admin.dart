@@ -1,13 +1,30 @@
-/// 📘 Pantalla de administración (AdminDashboard) - Diseño PREMIUM
-///
-/// 🔹 Funcionalidades principales:
-/// - Permite al administrador:
-///   → Ver todos los usuarios registrados (excepto a sí mismo).  
-///   → Filtrar usuarios por nombre
-///   → Editar o eliminar usuarios.  
-///   → Visualizar, editar y eliminar los viajes de cada usuario.  
-/// - Sincronización en tiempo real con Firebase Firestore.
-/// - Muestra confirmaciones y notificaciones visuales.
+/// 📘 PANEL DE ADMINISTRACIÓN - GESTIÓN COMPLETA
+/// 
+/// 🔹 FUNCIONALIDADES PRINCIPALES:
+/// - Visualización de todos los usuarios registrados
+/// - Edición completa de usuarios (email, contraseña, rol)
+/// - Gestión de viajes de cualquier usuario
+/// - Sistema de búsqueda y filtrado de usuarios
+/// - Eliminación de usuarios y sus datos asociados
+///   
+/// 🔹 GESTIÓN DE USUARIOS:
+/// • Lista en tiempo real de todos los usuarios
+/// • Filtrado por nombre de usuario
+/// • Edición de email, contraseña y rol
+/// • Eliminación con confirmación (incluye viajes)
+/// • Visualización de viajes por usuario
+/// 
+/// 🔹 GESTIÓN DE VIAJES DESDE ADMIN:
+/// • Acceso a todos los viajes de cualquier usuario
+/// • Edición completa con mismos campos que usuario
+/// • Eliminación individual de viajes
+/// • Visualización en modal expandido
+/// 
+/// 🔹 SEGURIDAD Y ESTABILIDAD:
+/// • Barrier dismissible false en diálogos críticos
+/// • Estados de loading que desactivan botones
+/// • SnackBars informativos de éxito/error
+/// • Actualización en tiempo real sin congelamientos
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -176,227 +193,304 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
-  // 🔹 Editar usuario - Diseño PREMIUM
-  void _editUser(BuildContext context, String id, String username, String password, String rol) {
-    final usernameController = TextEditingController(text: username);
+  // 🔹 Editar usuario - Diseño PREMIUM CORREGIDO
+  void _editUser(BuildContext context, String id, String username, String password, String rol, String email) {
+    final emailController = TextEditingController(text: email);
     final passwordController = TextEditingController(text: password);
     String selectedRole = rol;
+    bool _guardando = false;
 
     showDialog(
       context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF415A77), Color(0xFF1B263B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Editar Usuario',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+      barrierDismissible: false,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF415A77), Color(0xFF1B263B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ),
-                const SizedBox(height: 20),
-                _buildEditField(
-                  controller: usernameController,
-                  label: 'Nombre de usuario',
-                  icon: Icons.person,
-                ),
-                const SizedBox(height: 15),
-                _buildEditField(
-                  controller: passwordController,
-                  label: 'Contraseña',
-                  icon: Icons.lock,
-                  obscureText: true,
-                ),
-                const SizedBox(height: 15),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonFormField<String>(
-                    value: selectedRole,
-                    dropdownColor: const Color(0xFF1B263B),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Rol',
-                      labelStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: Container(
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.purpleAccent.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.admin_panel_settings, color: Colors.white70),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.1),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.purpleAccent),
-                      ),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'user', child: Text('Usuario', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'admin', child: Text('Administrador', style: TextStyle(color: Colors.white))),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) selectedRole = value;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 25),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Cancelar'),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blueAccent.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await _db.collection('users').doc(id).update({
-                              'username': usernameController.text.trim(),
-                              'password': passwordController.text.trim(),
-                              'rol': selectedRole,
-                            });
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Row(
-                                    children: [
-                                      Icon(Icons.check_circle, color: Colors.green[100]),
-                                      const SizedBox(width: 10),
-                                      const Expanded(child: Text('Usuario actualizado correctamente')),
-                                    ],
-                                  ),
-                                  backgroundColor: Colors.green[800],
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Guardar'),
-                        ),
-                      ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-              ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Editar Usuario',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Campo Email
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextFormField(
+                        controller: emailController,
+                        style: const TextStyle(color: Colors.white),
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                        decoration: InputDecoration(
+                          labelText: 'Correo electrónico',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.email, color: Colors.blueAccent[100]),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.blueAccent),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 15),
+                    
+                    // Campo Contraseña
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextFormField(
+                        controller: passwordController,
+                        style: const TextStyle(color: Colors.white),
+                        obscureText: true,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                        decoration: InputDecoration(
+                          labelText: 'Contraseña',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.lock, color: Colors.redAccent[100]),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.redAccent),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 15),
+                    
+                    // Selector de Rol
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        value: selectedRole,
+                        dropdownColor: const Color(0xFF1B263B),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Rol',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.purpleAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.admin_panel_settings, color: Colors.white70),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.purpleAccent),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'user', child: Text('Usuario', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(value: 'admin', child: Text('Administrador', style: TextStyle(color: Colors.white))),
+                        ],
+                        onChanged: _guardando 
+                            ? null 
+                            : (value) {
+                                if (value != null) {
+                                  setStateDialog(() => selectedRole = value);
+                                }
+                              },
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 25),
+                    
+                    // Botones de acción
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.withOpacity(0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _guardando ? null : () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: _guardando
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Text('Cancelar'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blueAccent.withOpacity(0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _guardando ? null : () async {
+                                setStateDialog(() => _guardando = true);
+                                
+                                try {
+                                  await _db.collection('users').doc(id).update({
+                                    'email': emailController.text.trim(),
+                                    'password': passwordController.text.trim(),
+                                    'rol': selectedRole,
+                                    'updatedAt': DateTime.now(),
+                                  });
+                                  
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: [
+                                            Icon(Icons.check_circle, color: Colors.green[100]),
+                                            const SizedBox(width: 10),
+                                            const Expanded(child: Text('Usuario actualizado correctamente')),
+                                          ],
+                                        ),
+                                        backgroundColor: Colors.green[800],
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  setStateDialog(() => _guardando = false);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: [
+                                            Icon(Icons.error_outline, color: Colors.red[100]),
+                                            const SizedBox(width: 10),
+                                            Expanded(child: Text('Error: $e')),
+                                          ],
+                                        ),
+                                        backgroundColor: Colors.red[800],
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: _guardando
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Text('Guardar'),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEditField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool obscureText = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        controller: controller,
-        style: const TextStyle(color: Colors.white),
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.white70),
-          prefixIcon: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: Colors.blueAccent[100]),
-          ),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.1),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.blueAccent),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -516,7 +610,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             ),
                             subtitle: Text(
                               'Salida: ${fechaSalida.day}/${fechaSalida.month}/${fechaSalida.year}\n'
-                              'Vuelta: ${fechaVuelta.day}/${fechaVuelta.month}/${fechaVuelta.year}',
+                              'Vuelta: ${fechaVuelta.day}/${fechaVuelta.month}/${fechaVuelta.year}\n'
+                              'Personas: ${data['personas']} • ${data['transporte']}',
                               style: const TextStyle(color: Colors.white70),
                             ),
                             trailing: Row(
@@ -561,189 +656,459 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // 🔹 Editar viaje - Diseño PREMIUM
+  // 🔹 Editar viaje - Diseño PREMIUM CORREGIDO
   void _editTrip(BuildContext context, String userId, String tripId, Map<String, dynamic> data) async {
     final origenController = TextEditingController(text: data['origen']);
     final destinoController = TextEditingController(text: data['destino']);
     final notasController = TextEditingController(text: data['notas']);
-    String transporte = data['transporte'];
+    final formKey = GlobalKey<FormState>();
 
-    showDialog(
+    DateTime? fechaSalida = (data['fecha_salida'] as Timestamp).toDate();
+    DateTime? fechaVuelta = (data['fecha_vuelta'] as Timestamp).toDate();
+    int personas = data['personas'];
+    String transporte = data['transporte'];
+    bool _guardandoViaje = false;
+
+    await showDialog(
       context: context,
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF415A77), Color(0xFF1B263B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Editar Viaje',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+        child: StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF415A77), Color(0xFF1B263B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ),
-                const SizedBox(height: 20),
-                _buildEditField(
-                  controller: origenController,
-                  label: 'Origen',
-                  icon: Icons.flight_takeoff,
-                ),
-                const SizedBox(height: 15),
-                _buildEditField(
-                  controller: destinoController,
-                  label: 'Destino',
-                  icon: Icons.flight_land,
-                ),
-                const SizedBox(height: 15),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonFormField<String>(
-                    value: transporte,
-                    dropdownColor: const Color(0xFF1B263B),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Transporte',
-                      labelStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: Container(
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.greenAccent.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.directions_transit, color: Colors.white70),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.1),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.greenAccent),
-                      ),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'Avión ✈️', child: Text('Avión ✈️', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'Tren 🚄', child: Text('Tren 🚄', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'Coche 🚗', child: Text('Coche 🚗', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'Barco 🚢', child: Text('Barco 🚢', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'Autobús 🚌', child: Text('Autobús 🚌', style: TextStyle(color: Colors.white))),
-                    ],
-                    onChanged: (v) => transporte = v!,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                _buildEditField(
-                  controller: notasController,
-                  label: 'Notas',
-                  icon: Icons.note,
-                ),
-                const SizedBox(height: 25),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Cancelar'),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blueAccent.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await _db.collection('users').doc(userId).collection('trips').doc(tripId).update({
-                              'origen': origenController.text,
-                              'destino': destinoController.text,
-                              'transporte': transporte,
-                              'notas': notasController.text,
-                            });
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Row(
-                                    children: [
-                                      Icon(Icons.check_circle, color: Colors.green[100]),
-                                      const SizedBox(width: 10),
-                                      const Expanded(child: Text('Viaje actualizado correctamente')),
-                                    ],
-                                  ),
-                                  backgroundColor: Colors.green[800],
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Guardar'),
-                        ),
-                      ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-              ],
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            '✏️ Editar Viaje',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white70),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _buildEditField(
+                        controller: origenController,
+                        label: 'Origen',
+                        icon: Icons.flight_takeoff,
+                        validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 15),
+                      _buildEditField(
+                        controller: destinoController,
+                        label: 'Destino',
+                        icon: Icons.flight_land,
+                        validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 15),
+                      
+                      // Selector de personas
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.people, color: Colors.blueAccent[100]),
+                                const SizedBox(width: 10),
+                                const Text('Personas:', style: TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.remove, color: Colors.white, size: 18),
+                                  ),
+                                  onPressed: () {
+                                    if (personas > 1) {
+                                      setStateDialog(() => personas--);
+                                    }
+                                  },
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blueAccent.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text('$personas',
+                                      style: const TextStyle(
+                                          fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                                ),
+                                IconButton(
+                                  icon: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(0.3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.add, color: Colors.white, size: 18),
+                                  ),
+                                  onPressed: () => setStateDialog(() => personas++),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      
+                      // Selector de transporte
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: transporte,
+                          dropdownColor: const Color(0xFF1B263B),
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(
+                            labelText: 'Medio de transporte',
+                            labelStyle: TextStyle(color: Colors.white70),
+                            border: InputBorder.none,
+                            prefixIcon: Icon(Icons.directions_transit, color: Colors.white70),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'Avión ✈️', child: Text('Avión ✈️')),
+                            DropdownMenuItem(value: 'Tren 🚄', child: Text('Tren 🚄')),
+                            DropdownMenuItem(value: 'Coche 🚗', child: Text('Coche 🚗')),
+                            DropdownMenuItem(value: 'Barco 🚢', child: Text('Barco 🚢')),
+                            DropdownMenuItem(value: 'Autobús 🚌', child: Text('Autobús 🚌')),
+                          ],
+                          onChanged: (value) => setStateDialog(() => transporte = value!),
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      
+                      // Selectores de fecha
+                      _buildDateSelector(
+                        label: 'Fecha de Salida',
+                        date: fechaSalida,
+                        onTap: () async {
+                          final fecha = await showDatePicker(
+                            context: context,
+                            initialDate: fechaSalida ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (fecha != null) {
+                            setStateDialog(() => fechaSalida = fecha);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      _buildDateSelector(
+                        label: 'Fecha de Regreso',
+                        date: fechaVuelta,
+                        onTap: () async {
+                          final fecha = await showDatePicker(
+                            context: context,
+                            initialDate: fechaVuelta ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (fecha != null) {
+                            setStateDialog(() => fechaVuelta = fecha);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      
+                      // Campo de notas
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextFormField(
+                          controller: notasController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: 'Notas del viaje',
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon: Container(
+                              margin: const EdgeInsets.all(8),
+                              child: Icon(Icons.note, color: Colors.purpleAccent[100]),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.purpleAccent),
+                            ),
+                          ),
+                          maxLines: 3,
+                          textInputAction: TextInputAction.done,
+                        ),
+                      ),
+                      const SizedBox(height: 25),
+                      
+                      // Botones de acción
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.red.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: _guardandoViaje ? null : () => Navigator.pop(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: _guardandoViaje
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : const Text('Cancelar'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blueAccent.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: _guardandoViaje ? null : () async {
+                                  if (!formKey.currentState!.validate()) return;
+
+                                  setStateDialog(() => _guardandoViaje = true);
+
+                                  try {
+                                    final tripData = {
+                                      'origen': origenController.text.trim(),
+                                      'destino': destinoController.text.trim(),
+                                      'personas': personas,
+                                      'transporte': transporte,
+                                      'fecha_salida': fechaSalida ?? DateTime.now(),
+                                      'fecha_vuelta': fechaVuelta ?? DateTime.now(),
+                                      'notas': notasController.text.trim(),
+                                      'updatedAt': DateTime.now(),
+                                    };
+
+                                    await _db.collection('users').doc(userId).collection('trips').doc(tripId).update(tripData);
+
+                                    if (context.mounted) {
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              Icon(Icons.check_circle, color: Colors.green[100]),
+                                              const SizedBox(width: 10),
+                                              const Expanded(child: Text('Viaje actualizado correctamente')),
+                                            ],
+                                          ),
+                                          backgroundColor: Colors.green[800],
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    setStateDialog(() => _guardandoViaje = false);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              Icon(Icons.error_outline, color: Colors.red[100]),
+                                              const SizedBox(width: 10),
+                                              Expanded(child: Text('Error: $e')),
+                                            ],
+                                          ),
+                                          backgroundColor: Colors.red[800],
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: _guardandoViaje
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : const Text('Guardar Viaje'),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Función auxiliar para selectores de fecha
+  Widget _buildDateSelector({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today, color: Colors.orangeAccent[100], size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                date != null
+                    ? '$label: ${date.day}/${date.month}/${date.year}'
+                    : 'Seleccionar $label',
+                style: TextStyle(
+                  color: date != null ? Colors.white : Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
             ),
+            Icon(Icons.arrow_drop_down, color: Colors.white70),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Función auxiliar para campos de edición
+  Widget _buildEditField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+    TextInputAction textInputAction = TextInputAction.next,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextFormField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        obscureText: obscureText,
+        textInputAction: textInputAction,
+        validator: validator,
+        onFieldSubmitted: (_) {
+          if (textInputAction == TextInputAction.next) {
+            FocusScope.of(context).nextFocus();
+          }
+        },
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.white70),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blueAccent.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: Colors.blueAccent[100]),
+          ),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.1),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.blueAccent),
           ),
         ),
       ),
@@ -1122,7 +1487,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ),
                         ),
                         subtitle: Text(
-                          'Rol: ${data['rol']}',
+                          'Email: ${data['email']}\nRol: ${data['rol']}',
                           style: const TextStyle(color: Colors.white70),
                         ),
                         trailing: Row(
@@ -1148,8 +1513,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               child: IconButton(
                                 icon: const Icon(Icons.edit, size: 18),
                                 color: Colors.green,
-                                onPressed: () =>
-                                    _editUser(context, id, data['username'], data['password'], data['rol']),
+                                onPressed: () => _editUser(
+                                  context, 
+                                  id, 
+                                  data['username'], 
+                                  data['password'], 
+                                  data['rol'], 
+                                  data['email'] ?? ''
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),

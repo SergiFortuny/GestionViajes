@@ -1,11 +1,32 @@
-/// 📘 Descripción del archivo:
-/// Pantalla principal (HomeScreen) - Diseño PREMIUM
-///
-/// 🔹 Interfaz completamente renovada:
-/// - Gradientes y efectos visuales premium
-/// - Tarjetas con diseño glassmorphism
-/// - Animaciones y transiciones suaves
-/// - Iconografía moderna y elegante
+/// 📘 PANTALLA PRINCIPAL - GESTIÓN DE VIAJES
+/// 
+/// 🔹 FUNCIONALIDADES PRINCIPALES:
+/// - Visualización de viajes del usuario en tiempo real
+/// - Creación, edición y eliminación de viajes
+/// - Sistema de filtros avanzados (origen, destino, transporte)
+/// - Búsqueda en tiempo real
+/// - Navegación por drawer a otras secciones
+/// - Diferenciación de roles (admin/user)
+/// 
+/// 🔹 SISTEMA DE FILTROS:
+/// • Todos: búsqueda en todos los campos
+/// • Origen: filtro por ciudad de origen
+/// • Destino: filtro por ciudad de destino  
+/// • Transporte: filtro por medio de transporte
+/// 
+/// 🔹 GESTIÓN DE VIAJES:
+/// • Creación: formulario completo con validaciones
+/// • Edición: mismos campos que creación
+/// • Eliminación: con confirmación
+/// • Visualización: tarjetas informativas detalladas
+/// 
+/// 🔹 CAMPOS DE VIAJE:
+/// • Origen (obligatorio)
+/// • Destino (obligatorio)
+/// • Personas (1-99, selector visual)
+/// • Transporte (dropdown: avión, tren, coche, etc.)
+/// • Fechas de salida y regreso (selectores visuales)
+/// • Notas (opcional, texto multilínea)
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -74,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// ✏️ Añadir o editar viaje - Diseño PREMIUM
+  /// ✏️ Añadir o editar viaje - Diseño PREMIUM CORREGIDO
   Future<void> _addOrEditTrip({String? tripId, Map<String, dynamic>? existingData}) async {
     final origenController = TextEditingController(text: existingData?['origen'] ?? '');
     final destinoController = TextEditingController(text: existingData?['destino'] ?? '');
@@ -92,294 +113,307 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF415A77), Color(0xFF1B263B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            return SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF415A77), Color(0xFF1B263B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        tripId == null ? '✈️ Nuevo Viaje' : '✏️ Editar Viaje',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white70),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDialogField(
-                    controller: origenController,
-                    label: 'Origen',
-                    icon: Icons.flight_takeoff,
-                    validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
-                  ),
-                  const SizedBox(height: 15),
-                  _buildDialogField(
-                    controller: destinoController,
-                    label: 'Destino',
-                    icon: Icons.flight_land,
-                    validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
-                  ),
-                  const SizedBox(height: 15),
-                  
-                  // Selector de personas
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.people, color: Colors.blueAccent[100]),
-                            const SizedBox(width: 10),
-                            const Text('Personas:', style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.remove, color: Colors.white, size: 18),
-                              ),
-                              onPressed: () {
-                                if (personas > 1) setState(() => personas--);
-                              },
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            tripId == null ? '✈️ Nuevo Viaje' : '✏️ Editar Viaje',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.blueAccent.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text('$personas',
-                                  style: const TextStyle(
-                                      fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
-                            ),
-                            IconButton(
-                              icon: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.add, color: Colors.white, size: 18),
-                              ),
-                              onPressed: () => setState(() => personas++),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  
-                  // Selector de transporte
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      value: transporte,
-                      dropdownColor: const Color(0xFF1B263B),
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Medio de transporte',
-                        labelStyle: TextStyle(color: Colors.white70),
-                        border: InputBorder.none,
-                        prefixIcon: Icon(Icons.directions_transit, color: Colors.white70),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Avión ✈️', child: Text('Avión ✈️')),
-                        DropdownMenuItem(value: 'Tren 🚄', child: Text('Tren 🚄')),
-                        DropdownMenuItem(value: 'Coche 🚗', child: Text('Coche 🚗')),
-                        DropdownMenuItem(value: 'Barco 🚢', child: Text('Barco 🚢')),
-                        DropdownMenuItem(value: 'Autobús 🚌', child: Text('Autobús 🚌')),
-                      ],
-                      onChanged: (value) => setState(() => transporte = value!),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  
-                  // Selectores de fecha
-                  _buildDateSelector(
-                    label: 'Fecha de Salida',
-                    date: fechaSalida,
-                    onTap: () async {
-                      final fecha = await showDatePicker(
-                        context: context,
-                        initialDate: fechaSalida ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                      );
-                      if (fecha != null) setState(() => fechaSalida = fecha);
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  _buildDateSelector(
-                    label: 'Fecha de Regreso',
-                    date: fechaVuelta,
-                    onTap: () async {
-                      final fecha = await showDatePicker(
-                        context: context,
-                        initialDate: fechaVuelta ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                      );
-                      if (fecha != null) setState(() => fechaVuelta = fecha);
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  
-                  // Campo de notas
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextFormField(
-                      controller: notasController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: 'Notas del viaje',
-                        labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: Container(
-                          margin: const EdgeInsets.all(8),
-                          child: Icon(Icons.note, color: Colors.purpleAccent[100]),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.1),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.purpleAccent),
-                        ),
-                      ),
-                      maxLines: 3,
-                    ),
-                  ),
-                  const SizedBox(height: 25),
-                  
-                  // Botones de acción
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.red.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
                           ),
-                          child: ElevatedButton(
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white70),
                             onPressed: () => Navigator.pop(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 15),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('Cancelar'),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _buildDialogField(
+                        controller: origenController,
+                        label: 'Origen',
+                        icon: Icons.flight_takeoff,
+                        validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 15),
+                      _buildDialogField(
+                        controller: destinoController,
+                        label: 'Destino',
+                        icon: Icons.flight_land,
+                        validator: (v) => v!.isEmpty ? 'Campo obligatorio' : null,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 15),
+                      
+                      // Selector de personas - CORREGIDO
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.people, color: Colors.blueAccent[100]),
+                                const SizedBox(width: 10),
+                                const Text('Personas:', style: TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.remove, color: Colors.white, size: 18),
+                                  ),
+                                  onPressed: () {
+                                    if (personas > 1) {
+                                      setState(() => personas--);
+                                    }
+                                  },
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blueAccent.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text('$personas',
+                                      style: const TextStyle(
+                                          fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                                ),
+                                IconButton(
+                                  icon: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(0.3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.add, color: Colors.white, size: 18),
+                                  ),
+                                  onPressed: () => setState(() => personas++),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blueAccent.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              if (!formKey.currentState!.validate()) return;
-                              if (userId == null) return;
-
-                              final tripData = {
-                                'origen': origenController.text.trim(),
-                                'destino': destinoController.text.trim(),
-                                'personas': personas,
-                                'transporte': transporte,
-                                'fecha_salida': fechaSalida ?? DateTime.now(),
-                                'fecha_vuelta': fechaVuelta ?? DateTime.now(),
-                                'notas': notasController.text.trim(),
-                                'createdAt': existingData?['createdAt'] ?? DateTime.now(),
-                              };
-
-                              if (tripId == null) {
-                                await _db.collection('users').doc(userId).collection('trips').add(tripData);
-                              } else {
-                                await _db.collection('users').doc(userId).collection('trips').doc(tripId).update(tripData);
-                              }
-
-                              if (context.mounted) Navigator.pop(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 15),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('Guardar Viaje'),
-                          ),
+                      const SizedBox(height: 15),
+                      
+                      // Selector de transporte
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        child: DropdownButtonFormField<String>(
+                          value: transporte,
+                          dropdownColor: const Color(0xFF1B263B),
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(
+                            labelText: 'Medio de transporte',
+                            labelStyle: TextStyle(color: Colors.white70),
+                            border: InputBorder.none,
+                            prefixIcon: Icon(Icons.directions_transit, color: Colors.white70),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'Avión ✈️', child: Text('Avión ✈️')),
+                            DropdownMenuItem(value: 'Tren 🚄', child: Text('Tren 🚄')),
+                            DropdownMenuItem(value: 'Coche 🚗', child: Text('Coche 🚗')),
+                            DropdownMenuItem(value: 'Barco 🚢', child: Text('Barco 🚢')),
+                            DropdownMenuItem(value: 'Autobús 🚌', child: Text('Autobús 🚌')),
+                          ],
+                          onChanged: (value) => setState(() => transporte = value!),
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      
+                      // Selectores de fecha - CORREGIDOS
+                      _buildDateSelector(
+                        label: 'Fecha de Salida',
+                        date: fechaSalida,
+                        onTap: () async {
+                          final fecha = await showDatePicker(
+                            context: context,
+                            initialDate: fechaSalida ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (fecha != null) {
+                            setState(() => fechaSalida = fecha);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      _buildDateSelector(
+                        label: 'Fecha de Regreso',
+                        date: fechaVuelta,
+                        onTap: () async {
+                          final fecha = await showDatePicker(
+                            context: context,
+                            initialDate: fechaVuelta ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (fecha != null) {
+                            setState(() => fechaVuelta = fecha);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      
+                      // Campo de notas
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextFormField(
+                          controller: notasController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: 'Notas del viaje',
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon: Container(
+                              margin: const EdgeInsets.all(8),
+                              child: Icon(Icons.note, color: Colors.purpleAccent[100]),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.purpleAccent),
+                            ),
+                          ),
+                          maxLines: 3,
+                          textInputAction: TextInputAction.done,
+                        ),
+                      ),
+                      const SizedBox(height: 25),
+                      
+                      // Botones de acción
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.red.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: const Text('Cancelar'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blueAccent.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  if (!formKey.currentState!.validate()) return;
+                                  if (userId == null) return;
+
+                                  final tripData = {
+                                    'origen': origenController.text.trim(),
+                                    'destino': destinoController.text.trim(),
+                                    'personas': personas,
+                                    'transporte': transporte,
+                                    'fecha_salida': fechaSalida ?? DateTime.now(),
+                                    'fecha_vuelta': fechaVuelta ?? DateTime.now(),
+                                    'notas': notasController.text.trim(),
+                                    'createdAt': existingData?['createdAt'] ?? DateTime.now(),
+                                  };
+
+                                  if (tripId == null) {
+                                    await _db.collection('users').doc(userId).collection('trips').add(tripData);
+                                  } else {
+                                    await _db.collection('users').doc(userId).collection('trips').doc(tripId).update(tripData);
+                                  }
+
+                                  if (context.mounted) Navigator.pop(context);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: const Text('Guardar Viaje'),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -390,6 +424,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String label,
     required IconData icon,
     required String? Function(String?)? validator,
+    TextInputAction textInputAction = TextInputAction.next,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -398,6 +433,13 @@ class _HomeScreenState extends State<HomeScreen> {
       child: TextFormField(
         controller: controller,
         style: const TextStyle(color: Colors.white),
+        textInputAction: textInputAction,
+        validator: validator,
+        onFieldSubmitted: (_) {
+          if (textInputAction == TextInputAction.next) {
+            FocusScope.of(context).nextFocus();
+          }
+        },
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.white70),
@@ -420,7 +462,6 @@ class _HomeScreenState extends State<HomeScreen> {
             borderSide: const BorderSide(color: Colors.blueAccent),
           ),
         ),
-        validator: validator,
       ),
     );
   }

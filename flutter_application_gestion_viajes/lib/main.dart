@@ -1,16 +1,20 @@
-/// 📘 Descripción del archivo:
-/// Archivo principal `main.dart` de la aplicación "Gestión de Viajes".
-///
-/// 🔹 Funcionalidades principales:
-/// - Inicializa la aplicación Flutter y configura el tema global.
-/// - Define el estilo visual JetBlack (modo oscuro permanente).
-/// - Establece el punto de entrada (`LoginScreen`) y las rutas base.
-///
-/// 🔹 Aspectos visuales:
-/// - Paleta JetBlack unificada para toda la app.
-/// - Uso de Material 3 con esquinas redondeadas y fondos oscuros.
-/// - Colores coherentes en AppBar, Drawer, Inputs y botones.
-
+/// 📘 ARCHIVO PRINCIPAL - PUNTO DE ENTRADA DE LA APLICACIÓN
+/// 
+/// 🔹 FUNCIONALIDADES PRINCIPALES:
+/// - Inicializa Firebase con las credenciales del proyecto
+/// - Configura el tema global de la aplicación (JetBlack)
+/// - Define las rutas principales de navegación
+/// - Establece el punto de entrada en el Login
+/// 
+/// 🔹 ESTRUCTURA DE RUTAS:
+/// / → Login (pantalla de inicio de sesión)
+/// / → Register (pantalla de registro)
+/// 
+/// 🔹 CARACTERÍSTICAS DEL TEMA:
+/// • Colores oscuros 
+/// • Gradientes azules y púrpuras
+/// • Esquinas redondeadas en todos los componentes
+/// • Iconografía moderna y consistente
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
